@@ -20,6 +20,12 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 keywords = ["거북목%7C바른자세", "목%7C스트레칭", "손목%7C스트레칭", "허리%7C스트레칭"]
 
+with conn.cursor() as cursor:
+    delete_sql = """
+        DELETE FROM videos
+    """
+    cursor.execute(delete_sql)
+
 for keyword in keywords:
     params = {
         "key": YOUTUBE_API_KEY,
@@ -36,13 +42,8 @@ for keyword in keywords:
     data = [(response["id"]["videoId"], response["snippet"]["title"], response["snippet"]["thumbnails"]["medium"]["url"], category) for response in responses["items"]]
 
     with conn.cursor() as cursor:
-        delete_sql = """
-            DELETE FROM videos WHERE category = %s
-        """
-        cursor.execute(delete_sql, (category,))
-
         sql = """
-            INSERT INTO videos
+            INSERT IGNORE INTO videos
             (video_id, title, thumbnail_url, category)
             VALUES (%s, %s, %s, %s)
         """
