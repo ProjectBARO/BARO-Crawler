@@ -1,4 +1,4 @@
-name: Update video data
+name: Update Video Data
 
 on:
   schedule:
