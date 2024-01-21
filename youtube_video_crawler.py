@@ -17,32 +17,37 @@ conn = pymysql.connect(
 
 YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/search?"
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
-params = {
-    "key": YOUTUBE_API_KEY,
-    "part": "snippet",
-    "maxResults": 50,
-    "q": "거북목%7C스트레칭%7C",
-    "type": "video",
-    "videoDuration" : "medium",
-}
 
-responses = requests.get(YOUTUBE_API_URL + urllib.parse.urlencode(params)).json()
+keywords = ["거북목%7C바른자세", "목%7C스트레칭", "손목%7C스트레칭", "허리%7C스트레칭"]
 
-data = [(response["id"]["videoId"], response["snippet"]["title"], response["snippet"]["thumbnails"]["medium"]["url"]) for response in responses["items"]]
+for keyword in keywords:
+    params = {
+        "key": YOUTUBE_API_KEY,
+        "part": "snippet",
+        "maxResults": 50,
+        "q": keyword,
+        "type": "video",
+        "videoDuration" : "medium",
+    }
 
-with conn.cursor() as cursor:
-    delete_sql = """
-        DELETE FROM videos
-    """
-    cursor.execute(delete_sql)
+    responses = requests.get(YOUTUBE_API_URL + urllib.parse.urlencode(params)).json()
 
-    sql = """
-        INSERT INTO videos
-        (video_id, title, thumbnail_url)
-        VALUES (%s, %s, %s)
-    """
-    cursor.executemany(sql, data)
-    
-conn.commit()
+    category = urllib.parse.unquote(keyword).replace("|", "")
+    data = [(response["id"]["videoId"], response["snippet"]["title"], response["snippet"]["thumbnails"]["medium"]["url"], category) for response in responses["items"]]
+
+    with conn.cursor() as cursor:
+        delete_sql = """
+            DELETE FROM videos WHERE category = %s
+        """
+        cursor.execute(delete_sql, (category,))
+
+        sql = """
+            INSERT INTO videos
+            (video_id, title, thumbnail_url, category)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.executemany(sql, data)
+        
+    conn.commit()
 
 conn.close()
