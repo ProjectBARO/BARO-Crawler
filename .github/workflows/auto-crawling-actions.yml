@@ -23,6 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests pymysql
+          pip install cryptography
 
       - name: Run script
         run: python youtube_video_crawler.py
